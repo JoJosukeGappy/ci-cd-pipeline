@@ -1,0 +1,53 @@
+name: Reusable CI Pipeline
+
+on:
+  workflow_call:
+    inputs:
+      node-versions:
+        required: false
+        type: string
+        default: '["18", "20", "22"]'
+
+      run-lint:
+        required: false
+        type: boolean
+        default: true
+
+    outputs:
+      build-status:
+        description: "Resultado de la construcción"
+        value: ${{ jobs.build.outputs.status }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    outputs:
+      status: ${{ steps.build-status.outputs.status }}
+
+    strategy:
+      matrix:
+        node-version: ${{ fromJSON(inputs.node-versions) }}
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Mostrar versión de Node.js
+        run: node --version
+
+      - name: Ejecutar lint
+        if: ${{ inputs.run-lint }}
+        run: echo "Ejecutando Lint..."
+
+      - name: Ejecutar build
+        run: echo "Construyendo proyecto..."
+
+      - name: Guardar resultado
+        id: build-status
+        run: echo "status=success" >> "$GITHUB_OUTPUT"
